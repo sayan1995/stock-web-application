@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+<!--definition of elements-->
+    <xsd:element name="stock">
+        <xsd:complexType mixed="true">
+            <xsd:sequence minOccurs="1" maxOccurs="1">
+                <xsd:element name="symbol">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                            <xsd:length value="3" />
+                            <xsd:pattern value="[A-Z][A-Z][A-Z]" />
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:element>
+
+                <!--Definition of Price with Currency attribute-->
+                <xsd:element name="release_date" type="xsd:date" />
+                <xsd:element name="price">
+                    <xsd:complexType>
+                        <xsd:simpleContent>
+                            <xsd:extension base="xsd:decimal">
+                            <xsd:attribute name="currency" type="xsd:string" use="required"/>
+                            </xsd:extension>
+                        </xsd:simpleContent>
+			        </xsd:complexType>
+                </xsd:element>
+
+                <xsd:element name="company" type="organisation" />
+
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!--Definition of organisation-->
+    <xsd:complexType name="organisation">
+            <xsd:sequence>
+                <xsd:element name="name">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                            <xsd:pattern value="[A-Z][a-zA-Z]*( [A-Z][a-zA-Z]*)*" />
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:element>
+
+                <xsd:element name="total">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:integer">
+                            <xsd:minExclusive value="1" />
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:element>
+                
+                <xsd:element name="country">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                            <xsd:pattern value="[A-Z]+" />
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:element>
+            </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,18 @@
+{
+    "accountDetails": [{
+            "account_no": "107",
+            "routing_no": "122",
+            "amount": 1000
+        },
+        {
+            "account_no": "108",
+            "routing_no": "122",
+            "amount": 1600
+        },
+        {
+            "account_no": "109",
+            "routing_no": "122",
+            "amount": 400
+        }
+    ]
+}

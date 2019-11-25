@@ -1,0 +1,14 @@
+
+<?xml version='1.0' encoding='UTF-8'?>
+<stocks>
+    <stock>
+        <symbol>MSF</symbol>
+        <released_date>2002-09-24</released_date>
+        <price>40.00</price>
+        <company>
+            <name>Microsoft</name>
+            <total>1000000000</total>
+            <country>USA</country>
+        </company>
+    </stock>
+</stocks>

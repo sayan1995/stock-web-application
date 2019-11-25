@@ -1,0 +1,43 @@
+<html>
+
+<head>
+    <style>
+        #main {
+            display: none;
+            border: 1px solid black;
+        }
+    </style>
+    <script>
+        document.addEventListener('click', function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    console.log(JSON.parse(this.responseText));
+                    //document.getElementById("demo").innerHTML = this.responseText;
+                }
+            };
+            var username = document.getElementById("username").value;
+            xhttp.open("GET", "http://localhost:3000/forgotPwd?username=" + username, true);
+
+            xhttp.send();
+        });
+    </script>
+</head>
+
+<body>
+    Enter your Email Adress:
+    <br>
+    <br>
+    <input type="text" id="username">
+    <br>
+    <br>
+    <input type="button" id="b1" value="Submit">
+    <div id="main">
+        <h1 id="s1"></h1>
+        <input type="text" name="a1">
+        <input type="text" name="a2">
+    </div>
+
+</body>
+
+</html>
