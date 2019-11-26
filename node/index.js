@@ -1,15 +1,22 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const path = require('path');
-const port = 3000
+const port = process.env.PORT || 3000;
 const mongo = require('mongodb');
-const bodyParser = require('body-parser')
-
+const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
-const url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb" // "mongodb://localhost:27017/mydb";
+const url = '';
+const dbName = '';
+
+if (port == 3000) {
+    url = "mongodb://localhost:27017/mydb";
+    dbName = "stock";
+} else {
+    url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb";
+    dbName = "heroku_1lfwt3kb";
+}
 
 const http = require('http');
-const port = process.env.PORT || 3000
 
 const server = http.createServer((req, res) => {
     res.statusCode = 200;
@@ -44,7 +51,7 @@ app.post('/login', function(req, res) {
     const pwd = req.body.password;
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("login").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 console.log(db1);
@@ -67,7 +74,7 @@ app.get('/forgotPwd', function(req, res) {
     const username = req.query.username;
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("login").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 console.log(db1);
@@ -91,7 +98,7 @@ app.post('/checkQuestion', function(req, res) {
     const a2 = req.body.a2;
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("login").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 console.log(db1);
@@ -119,7 +126,7 @@ app.post('/updatePwd', function(req, res) {
     const pwd = req.body.password;
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("login").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 console.log(db1);
@@ -156,7 +163,7 @@ app.post('/register', function(req, res) {
     console.log(req.body);
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         app.use(express.json())
         var myobj = { name: username, password: password, address: address, email: email, 'securityQuestion': [{ 'question1': q1, 'security1': a1 }, { 'question2': q2, 'security2': a2 }] };
         dbo.collection("login").findOne({ name: username }, function(err, dres) {
@@ -206,7 +213,7 @@ app.post('/saveBankAccount', function(req, res) {
     }
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("accountDetails").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 if (db1 != null) {
@@ -258,7 +265,7 @@ app.post('/getBankAccounts', function(req, res) {
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("accountDetails").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 if (db1 != null) {
@@ -290,7 +297,7 @@ app.post('/transferAmount', function(req, res) {
     console.log(bankArray2);
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
-        var dbo = db.db("stock");
+        var dbo = db.db(dbName);
         dbo.collection("accountDetails").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 if (db1 != null) {
@@ -345,7 +352,7 @@ app.post('/transferAmount', function(req, res) {
     });
 });
 
-app.listen(process.env.PORT || 3000, function() {
+app.listen(port, function() {
     console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
 
