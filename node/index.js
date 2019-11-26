@@ -6,7 +6,7 @@ const mongo = require('mongodb');
 const bodyParser = require('body-parser')
 
 const MongoClient = require('mongodb').MongoClient;
-const url = process.env.MONGODB_URI || "mongodb://localhost:27017/mydb";
+const url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb" // "mongodb://localhost:27017/mydb";
 
 /*enable cors*/
 app.use(function(req, res, next) {
