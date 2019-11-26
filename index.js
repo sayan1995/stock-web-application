@@ -5,8 +5,8 @@ const port = process.env.PORT || 3000;
 const mongo = require('mongodb');
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
-const url = '';
-const dbName = '';
+var url = '';
+var dbName = '';
 
 if (port == 3000) {
     url = "mongodb://localhost:27017/mydb";
