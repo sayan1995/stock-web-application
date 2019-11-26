@@ -5,6 +5,7 @@ const port = process.env.PORT || 3000;
 const mongo = require('mongodb');
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
+var yahooFinance = require('yahoo-finance');
 var url = '';
 var dbName = '';
 
@@ -351,6 +352,45 @@ app.post('/transferAmount', function(req, res) {
 
     });
 });
+
+
+app.get('/getStockData', function(req, res) {
+    console.log(req.query.id);
+    console.log(req.query.symbol);
+    const symbol = req.query.symbol;
+    const fromdate = req.query.fromdate;
+    const todate = req.query.todate;
+    yahooFinance.historical({
+        symbol: symbol,
+        from: fromdate,
+        to: todate
+            // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
+    }, function(err, quotes) {
+        //...
+        return (res.json(quotes));
+
+    });
+
+
+});
+
+
+app.get('/getCurrentPrice', function(req, res) {
+    console.log(req.query.symbol);
+    const symbol = req.query.symbol;
+
+    // This replaces the deprecated snapshot() API
+    yahooFinance.quote({
+        symbol: symbol,
+        modules: ['price'] // see the docs for the full list
+    }, function(err, quotes) {
+        // ...
+        return (res.json(quotes));
+
+    });
+
+});
+
 
 app.listen(port, function() {
     console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
