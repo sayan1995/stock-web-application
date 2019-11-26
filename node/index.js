@@ -8,13 +8,6 @@ const bodyParser = require('body-parser')
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb" // "mongodb://localhost:27017/mydb";
 
-/*enable cors*/
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
-
 const http = require('http');
 const port = process.env.PORT || 3000
 
@@ -24,6 +17,12 @@ const server = http.createServer((req, res) => {
     res.end('<h1>Hello World</h1>');
 });
 
+/*enable cors*/
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 /*MongoClient.connect(url, function(err, db) {
     if (err) throw err;
