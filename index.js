@@ -8,10 +8,13 @@ const MongoClient = require('mongodb').MongoClient;
 const url = '';
 const dbName = '';
 
-
-url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb";
-dbName = "heroku_1lfwt3kb";
-
+if (port == 3000) {
+    url = "mongodb://localhost:27017/mydb";
+    dbName = "stock";
+} else {
+    url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb";
+    dbName = "heroku_1lfwt3kb";
+}
 
 const http = require('http');
 
