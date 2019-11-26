@@ -9,7 +9,7 @@ const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://hosmani:sayan1995@ds149218.mlab.com:49218/heroku_1lfwt3kb" // "mongodb://localhost:27017/mydb";
 
 const http = require('http');
-const port = process.env.PORT || 3000
+
 
 const server = http.createServer((req, res) => {
     res.statusCode = 200;
