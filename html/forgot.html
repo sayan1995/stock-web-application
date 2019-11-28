@@ -7,17 +7,34 @@
             display: none;
         }
     </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
+        $(document).ready(function() {
+
+            $('#b1').on('click', function() {
+                var username = $('#username').val();
+                $.ajax({
+                    url: 'http://localhost:3000/user/forgotPwd?username=' + username,
+                    type: 'GET',
+                    success: function(response) {
+                        document.getElementById("main").style.display = "block";
+                        document.getElementById("q1").innerHTML = response.response[0].question1;
+                        document.getElementById("q2").innerHTML = response.response[1].question2;
+                    }
+                });
+            });
+        });
+        /*
         document.addEventListener('click', function() {
+
+
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
                     var response = this.responseText;
                     response = JSON.parse(response);
                     console.log(response);
-                    document.getElementById("main").style.display = "block";
-                    document.getElementById("q1").innerHTML = response.response[0].question1;
-                    document.getElementById("q2").innerHTML = response.response[1].question2;
+
                 }
             };
             var username = document.getElementById("username").value;
@@ -25,7 +42,7 @@
             xhttp.open("GET", "http://localhost:3000/user/forgotPwd?username=" + username, true);
 
             xhttp.send();
-        });
+        });*/
     </script>
 </head>
 
