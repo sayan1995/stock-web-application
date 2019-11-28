@@ -1,0 +1,56 @@
+<html>
+
+<head>
+    <style>
+        #main,
+        #hidden1 {
+            display: none;
+        }
+    </style>
+    <script>
+        document.addEventListener('click', function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = this.responseText;
+                    response = JSON.parse(response);
+                    console.log(response);
+                    document.getElementById("main").style.display = "block";
+                    document.getElementById("q1").innerHTML = response.response[0].question1;
+                    document.getElementById("q2").innerHTML = response.response[1].question2;
+                }
+            };
+            var username = document.getElementById("username").value;
+            document.getElementById("hidden1").value = username;
+            xhttp.open("GET", "http://localhost:3000/user/forgotPwd?username=" + username, true);
+
+            xhttp.send();
+        });
+    </script>
+</head>
+
+<body>
+    Enter your Email Adress:
+    <br>
+    <br>
+    <input type="text" id="username">
+    <br>
+    <br>
+    <input type="button" id="b1" value="Submit">
+    <div id="main">
+        <form name="regform" action="http://localhost:8888/checkQuestion" method="POST">
+            <input type="text" name="username" id="hidden1">
+            <h3 id="q1"></h3>
+            <input type="text" name="a1">
+            <br>
+            <br>
+            <h3 id="q2"></h3>
+            <input type="text" name="a2">
+            <input type="submit">
+        </form>
+
+    </div>
+
+</body>
+
+</html>
