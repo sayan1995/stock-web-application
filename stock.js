@@ -320,6 +320,27 @@ app.post('/sellStock', function(req, res) {
 
 });
 
+app.post('/getUserStockData', function(req, res) {
+    const username = req.body.username;
+    MongoClient.connect(url, function(err, db) {
+        var dbo = db.db(dbName);
+        dbo.collection("stockProfile").find({ name: username }).toArray(function(err, db1) {
+            if (err) throw err;
+            console.log("documents returned");
+            console.log(db1);
+            if (db1 != null) {
+                db.close();
+                return res.json(db1);
+
+            } else {
+                db.close();
+                return res.json({});
+
+            }
+        });
+    });
+
+});
 
 
 module.exports = app;
