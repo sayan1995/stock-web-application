@@ -3,7 +3,20 @@ const app = express.Router();
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
 var yahooFinance = require('yahoo-finance');
+const compression = require('compression');
+const zlib = require('zlib');
+const https = require('https');
+const fs = require('fs');
+const querystring = require('querystring');
+const jsonParser = bodyParser.json()
 
+app.use(compression({
+    filter: (req, res) => {
+        var x = compression.filter(req, res);
+        console.log('to-be-compressed', x, ' ', req.originalUrl);
+        return x;
+    }
+}));
 
 const port = process.env.PORT || 3000;
 var url = '';
@@ -19,132 +32,142 @@ if (port == 3000) {
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.get('/getStockData', function(req, res) {
-    console.log(req.query.id);
+app.post('/getStockData', function(req, res) {
     console.log(req.query.symbol);
-    const symbol = req.query.symbol;
-    const fromdate = req.query.fromdate;
-    const todate = req.query.todate;
-    yahooFinance.historical({
-        symbol: symbol,
-        from: fromdate,
-        to: todate
-            // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
-    }, function(err, quotes) {
-        //...
-        return (res.json(quotes));
+    var DATA
+    const symbol = req.body.symbol;
+    const fromdate = req.body.fromdate;
+    const todate = req.body.todate;
+
+    var myPromise = new Promise(function(resolve, reject) {
+
+        const data = querystring.stringify({
+            symbol: symbol,
+            fromdate: fromdate,
+            todate: todate
+        });
+
+        console.log(data);
+
+        var options = {
+            hostname: 'localhost',
+            port: 3002,
+            path: '/getStock?' + data,
+            method: 'GET',
+            ca: fs.readFileSync('./server2/ca-crt.pem'),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        };
+
+        var req = https.request(options, function(res) {
+
+            res.on('data', function(data) {
+                console.log(data);
+                resolve(data);
+            });
+        });
+
+        req.on('error', (e) => {
+            console.error(e);
+            reject(err);
+        });
+
+        req.end();
+    }).then(function(data) {
+        const final = data.toString();
+        return res.send(data);
+        // return res.send(data.toString());
 
     });
+
 
 
 });
 
 
-app.get('/getCurrentPrice', function(req, res) {
-    console.log(req.query.symbol);
-    const symbol = req.query.symbol;
+app.post('/getUserStockData', function(req, res) {
+    const username = req.body.username;
+    MongoClient.connect(url, function(err, db) {
+        var dbo = db.db(dbName);
+        dbo.collection("stockProfile").find({ name: username }).toArray(function(err, db1) {
+            if (err) throw err;
+            console.log("documents returned");
+            console.log(db1);
+            if (db1 != null) {
+                db.close();
+                const buf = new Buffer(JSON.stringify(db1), 'utf-8');
+                zlib.gzip(buf, function(_, result) {
+                    return res.send(result);
+                });
+            } else {
+                db.close();
+                const buf = new Buffer(JSON.stringify({ response: "no stocks" }), 'utf-8');
+                zlib.gzip(buf, function(_, result) {
+                    return res.send(result);
+                });
+            }
+        });
+    });
 
-    // This replaces the deprecated snapshot() API
-    yahooFinance.quote({
-        symbol: symbol,
-        modules: ['price'] // see the docs for the full list
-    }, function(err, quotes) {
-        // ...
-        return (res.json(quotes));
+});
+
+
+app.post('/getCurrentPrice', function(req, res) {
+    console.log(req.query.symbol);
+    const symbol = req.body.symbol;
+
+    var myPromise = new Promise(function(resolve, reject) {
+
+        const data = querystring.stringify({
+            symbol: symbol
+        });
+
+        console.log(data);
+
+        var options = {
+            hostname: 'localhost',
+            port: 3002,
+            path: '/getPrice?' + data,
+            method: 'GET',
+            ca: fs.readFileSync('./server2/ca-crt.pem'),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        };
+
+        var req = https.request(options, function(res) {
+
+            res.on('data', function(data) {
+                console.log(data);
+                resolve(data);
+            });
+        });
+
+        req.on('error', (e) => {
+            console.error(e);
+            reject(err);
+        });
+
+        req.end();
+    }).then(function(data) {
+        const final = data.toString();
+        return res.send(data);
+
+        // return res.send(data.toString());
 
     });
 
 });
 
 
-app.post('/buyStock', function(req, res) {
+app.post('/buyStock', jsonParser, function(req, res) {
     const symbol = req.body.symbol;
     const qty = req.body.qty;
     const acct_no = req.body.acct_no;
     const rtr_no = req.body.rtr_no;
     const username = req.body.username;
-    var totalPrice;
-    var marketPrice;
-    const bankArray1 = {
-        "account_no": acct_no,
-        "routing_no": rtr_no
-    };
-
-    yahooFinance.quote({
-        symbol: symbol,
-        modules: ['price'] // see the docs for the full list
-    }, function(err, quotes) {
-        var res1 = res;
-        marketPrice = quotes.price.regularMarketPrice;
-        totalPrice = parseInt(qty) * parseInt(marketPrice);
-        console.log(totalPrice);
-        MongoClient.connect(url, function(err, db) {
-            if (err) throw err;
-            var dbo = db.db(dbName);
-
-            //find accoutn details to update
-            dbo.collection("accountDetails").findOne({ name: username }, function(err, db1) {
-                if (err) {} else {
-                    if (db1 != null) {
-                        var newBankDetails = [];
-                        for (var i = 0; i < db1.bankDetails.length; i++) {
-                            if (bankArray1.account_no == db1.bankDetails[i].account_no && bankArray1.routing_no == db1.bankDetails[i].routing_no) {
-                                if (parseInt(db1.bankDetails[i].amount) - parseInt(totalPrice) < 0) {
-                                    db.close();
-                                    return res.send("Amount Greater than account value");
-                                } else {
-                                    db1.bankDetails[i].amount = parseInt(db1.bankDetails[i].amount) - parseInt(totalPrice);
-                                    console.log(db1.bankDetails[i].amount);
-                                }
-                                newBankDetails.push(db1.bankDetails[i]);
-                            }
-                        }
-                        //update account detail after deducting funds
-                        var myquery = { name: username };
-                        var newvalues = { $set: { bankDetails: newBankDetails } };
-                        dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db2) {
-                            if (err) throw err;
-                            console.log("1 document updated");
-
-                            //check if stock exists, if yet update
-                            dbo.collection("stockProfile").findOne({ name: username, symbol: symbol }, function(err, db3) {
-                                if (err) throw err;
-
-                                console.log("1 account detail document updated");
-                                //updating the qty if exists
-                                if (db3 != null) {
-                                    const finalQty = parseInt(qty) + parseInt(db3.qty);
-                                    console.log(finalQty);
-                                    var newStock = { $set: { qty: finalQty } };
-
-                                    //Add stock to profile, if its first time buying
-                                    var stockQuery = { name: username, symbol: symbol };
-                                    dbo.collection("stockProfile").updateOne(stockQuery, newStock, function(err, db4) {
-                                        console.log("1 stock document updated");
-                                        return res.send('stock row updated');
-                                    });
-                                } else {
-                                    dbo.collection("stockProfile").insertOne({ name: username, symbol: symbol, qty: qty }, function(err, db4) {
-                                        if (err) throw err;
-                                        console.log("1 document updated");
-                                        //Add stock to profile
-                                        res.send('new stock row created');
-                                    });
-                                }
-
-                            });
-                        });
-
-                    } else {
-                        return res.send("User does not have any account Details");
-                    }
-                }
-            });
-
-        });
-    });
-
-
+    res.json(req.body)
 });
 
 
@@ -189,8 +212,11 @@ app.post('/sellStock', function(req, res) {
                     var stockQuery = { name: username, symbol: symbol };
 
                     if (finalQty < 0) {
-                        res.send('Qty to sell is greater than owned quantity');
                         dbo.close();
+                        const buf = new Buffer(JSON.stringify({ response: "Qty to sell is greater than owned quantity" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     } else if (finalQty == 0) {
                         dbo.collection("stockProfile").deleteOne(stockQuery, function(err, db4) {
                             console.log("1 stock document updated");
@@ -211,13 +237,20 @@ app.post('/sellStock', function(req, res) {
                                         dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db2) {
                                             if (err) throw err;
                                             console.log("1 document updated");
-                                            res.send("User account Updated");
+                                            const buf = new Buffer(JSON.stringify({ response: "User account Updated" }), 'utf-8');
+                                            zlib.gzip(buf, function(_, result) {
+                                                return res.send(result);
+                                            });
+
                                             //check if stock exists, if yet update
 
                                         });
 
                                     } else {
-                                        return res.send("User does not have any account Details");
+                                        const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
                                     }
                                 }
                             });
@@ -245,13 +278,21 @@ app.post('/sellStock', function(req, res) {
                                         dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db2) {
                                             if (err) throw err;
                                             console.log("1 document updated");
-                                            res.send("User account Updated");
+                                            const buf = new Buffer(JSON.stringify({ response: "User account Updated" }), 'utf-8');
+                                            zlib.gzip(buf, function(_, result) {
+                                                return res.send(result);
+                                            });
+
                                             //check if stock exists, if yet update
 
                                         });
 
                                     } else {
-                                        return res.send("User does not have any account Details");
+                                        const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
+
                                     }
                                 }
                             });
@@ -263,7 +304,11 @@ app.post('/sellStock', function(req, res) {
                         if (err) throw err;
                         console.log("1 document updated");
                         //Add stock to profile
-                        res.send('new stock row created');
+                        const buf = new Buffer(JSON.stringify({ response: "new stock row created" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
+
                     });
                 }
 

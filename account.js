@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const port = process.env.PORT || 3000;
 const MongoClient = require('mongodb').MongoClient;
 var yahooFinance = require('yahoo-finance');
+const zlib = require('zlib');
+
 var url = '';
 var dbName = '';
 
@@ -40,7 +42,10 @@ app.post('/saveBankAccount', function(req, res) {
                     for (var i = 0; i < db1.bankDetails.length; i++) {
                         if (bankArray.account_no == db1.bankDetails[i].account_no && bankArray.routing_no == db1.bankDetails[i].routing_no) {
                             db.close();
-                            return res.send("Account Already Added");
+                            const buf = new Buffer(JSON.stringify({ response: "Account Already Added" }), 'utf-8');
+                            zlib.gzip(buf, function(_, result) {
+                                return res.send(result);
+                            });
                         } else {
                             newBankDetails.push(db1.bankDetails[i]);
                         }
@@ -49,20 +54,29 @@ app.post('/saveBankAccount', function(req, res) {
                     newBankDetails.push(bankArray);
                     console.log(newBankDetails);
                     var newvalues = { $set: { bankDetails: newBankDetails } };
-                    dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, res) {
+                    dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db1) {
                         if (err) throw err;
                         console.log("1 document updated");
                         db.close();
+                        const buf = new Buffer(JSON.stringify({ response: "Account Added" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     });
-                    return res.send("Account Added");
                 } else {
                     dbo.collection("accountDetails").insertOne({ name: username, bankDetails: [bankArray] }, function(err, db1) {
                         if (err) {} else {
                             console.log(db1);
                             if (db1 != null) {
-                                return res.send("1st Account Added");
+                                const buf = new Buffer(JSON.stringify({ response: "1st Account Added" }), 'utf-8');
+                                zlib.gzip(buf, function(_, result) {
+                                    return res.send(result);
+                                });
                             } else {
-                                return res.send("User does not exist");
+                                const buf = new Buffer(JSON.stringify({ response: "User does not exist" }), 'utf-8');
+                                zlib.gzip(buf, function(_, result) {
+                                    return res.send(result);
+                                });
                             }
                         }
                     });
@@ -85,9 +99,15 @@ app.post('/getBankAccounts', function(req, res) {
         dbo.collection("accountDetails").findOne({ name: username }, function(err, db1) {
             if (err) {} else {
                 if (db1 != null) {
-                    return (res.json({ 'accountDetails': db1.bankDetails }));
+                    const buf = new Buffer(JSON.stringify({ 'accountDetails': db1.bankDetails }), 'utf-8');
+                    zlib.gzip(buf, function(_, result) {
+                        return res.send(result);
+                    });
                 } else {
-                    return res.send("User does not have any account Details");
+                    const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                    zlib.gzip(buf, function(_, result) {
+                        return res.send(result);
+                    });
                 }
             }
         });
@@ -102,7 +122,7 @@ app.post('/transferAmount', function(req, res) {
     const username = req.body.username;
     const bankArray1 = {
         "account_no": req.body.acct_no_1,
-        "routing_no": req.body.rtr_no_2,
+        "routing_no": req.body.rtr_no_1,
         "amount": req.body.amount
     }
     const bankArray2 = {
@@ -123,11 +143,16 @@ app.post('/transferAmount', function(req, res) {
                     var flag2 = false;
                     //Payment Pull
                     var newBankDetails = [];
+                    console.log(bankArray1);
+                    console.log(db1.bankDetails);
                     for (var i = 0; i < db1.bankDetails.length; i++) {
                         if (bankArray1.account_no == db1.bankDetails[i].account_no && bankArray1.routing_no == db1.bankDetails[i].routing_no) {
-                            if (db1.bankDetails[i].amount - bankArray1.amount < 0) {
+                            if (parseInt(db1.bankDetails[i].amount) - parseInt(bankArray1.amount) < 0) {
                                 db.close();
-                                return res.send("Amount Greater than account value");
+                                const buf = new Buffer(JSON.stringify({ response: "Amount Greater than account value" }), 'utf-8');
+                                zlib.gzip(buf, function(_, result) {
+                                    return res.send(result);
+                                });
                             } else {
                                 flag1 = true;
                                 db1.bankDetails[i].amount = db1.bankDetails[i].amount - bankArray1.amount;
@@ -137,7 +162,11 @@ app.post('/transferAmount', function(req, res) {
                     }
                     if (flag1 == false) {
                         db.close();
-                        return res.send('Either Invalid Account_no or Routing no for amount to be deducted');
+                        const buf = new Buffer(JSON.stringify({ response: "Either Invalid Account_no or Routing no for amount to be deducted" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
+
                     }
                     //Payment Push
                     for (var i = 0; i < newBankDetails.length; i++) {
@@ -149,61 +178,32 @@ app.post('/transferAmount', function(req, res) {
 
                     if (flag2 == false) {
                         db.close();
-                        return res.send('Either Invalid Account_no or Routing no for amount to be added to');
+                        const buf = new Buffer(JSON.stringify({ response: "Either Invalid Account_no or Routing no for amount to be added to" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     }
                     console.log(newBankDetails);
                     var newvalues = { $set: { bankDetails: newBankDetails } };
-                    dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, res) {
+                    dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db1) {
                         if (err) throw err;
                         console.log("1 document updated");
                         db.close();
+                        const buf = new Buffer(JSON.stringify({ response: "Transfer Successful" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     });
-                    return res.send("Transfer Successful");
                 } else {
-                    return res.send("User does not have any account Details");
+                    const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                    zlib.gzip(buf, function(_, result) {
+                        return res.send(result);
+                    });
                 }
             }
         });
 
     });
-});
-
-
-app.get('/getStockData', function(req, res) {
-    console.log(req.query.id);
-    console.log(req.query.symbol);
-    const symbol = req.query.symbol;
-    const fromdate = req.query.fromdate;
-    const todate = req.query.todate;
-    yahooFinance.historical({
-        symbol: symbol,
-        from: fromdate,
-        to: todate
-            // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
-    }, function(err, quotes) {
-        //...
-        return (res.json(quotes));
-
-    });
-
-
-});
-
-
-app.get('/getCurrentPrice', function(req, res) {
-    console.log(req.query.symbol);
-    const symbol = req.query.symbol;
-
-    // This replaces the deprecated snapshot() API
-    yahooFinance.quote({
-        symbol: symbol,
-        modules: ['price'] // see the docs for the full list
-    }, function(err, quotes) {
-        // ...
-        return (res.json(quotes));
-
-    });
-
 });
 
 
@@ -241,7 +241,11 @@ app.post('/buyStock', function(req, res) {
                             if (bankArray1.account_no == db1.bankDetails[i].account_no && bankArray1.routing_no == db1.bankDetails[i].routing_no) {
                                 if (parseInt(db1.bankDetails[i].amount) - parseInt(totalPrice) < 0) {
                                     db.close();
-                                    return res.send("Amount Greater than account value");
+                                    const buf = new Buffer(JSON.stringify({ response: "Amount Greater than account value" }), 'utf-8');
+                                    zlib.gzip(buf, function(_, result) {
+                                        return res.send(result);
+                                    });
+
                                 } else {
                                     db1.bankDetails[i].amount = parseInt(db1.bankDetails[i].amount) - parseInt(totalPrice);
                                     console.log(db1.bankDetails[i].amount);
@@ -271,14 +275,20 @@ app.post('/buyStock', function(req, res) {
                                     var stockQuery = { name: username, symbol: symbol };
                                     dbo.collection("stockProfile").updateOne(stockQuery, newStock, function(err, db4) {
                                         console.log("1 stock document updated");
-                                        return res.send('stock row updated');
+                                        const buf = new Buffer(JSON.stringify({ response: "stock row updated" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
                                     });
                                 } else {
                                     dbo.collection("stockProfile").insertOne({ name: username, symbol: symbol, qty: qty }, function(err, db4) {
                                         if (err) throw err;
                                         console.log("1 document updated");
                                         //Add stock to profile
-                                        res.send('new stock row created');
+                                        const buf = new Buffer(JSON.stringify({ response: "new stock row created" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
                                     });
                                 }
 
@@ -286,7 +296,10 @@ app.post('/buyStock', function(req, res) {
                         });
 
                     } else {
-                        return res.send("User does not have any account Details");
+                        const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     }
                 }
             });
@@ -339,8 +352,12 @@ app.post('/sellStock', function(req, res) {
                     var stockQuery = { name: username, symbol: symbol };
 
                     if (finalQty < 0) {
-                        res.send('Qty to sell is greater than owned quantity');
                         dbo.close();
+                        const buf = new Buffer(JSON.stringify({ response: "Qty to sell is greater than owned quantity" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
+
                     } else if (finalQty == 0) {
                         dbo.collection("stockProfile").deleteOne(stockQuery, function(err, db4) {
                             console.log("1 stock document updated");
@@ -361,13 +378,21 @@ app.post('/sellStock', function(req, res) {
                                         dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db2) {
                                             if (err) throw err;
                                             console.log("1 document updated");
-                                            res.send("User account Updated");
+                                            const buf = new Buffer(JSON.stringify({ response: "User account Updated" }), 'utf-8');
+                                            zlib.gzip(buf, function(_, result) {
+                                                return res.send(result);
+                                            });
+
                                             //check if stock exists, if yet update
 
                                         });
 
                                     } else {
-                                        return res.send("User does not have any account Details");
+                                        const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
+
                                     }
                                 }
                             });
@@ -395,13 +420,20 @@ app.post('/sellStock', function(req, res) {
                                         dbo.collection("accountDetails").updateOne(myquery, newvalues, function(err, db2) {
                                             if (err) throw err;
                                             console.log("1 document updated");
-                                            res.send("User account Updated");
+                                            const buf = new Buffer(JSON.stringify({ response: "User account Updated" }), 'utf-8');
+                                            zlib.gzip(buf, function(_, result) {
+                                                return res.send(result);
+                                            });
+
                                             //check if stock exists, if yet update
 
                                         });
 
                                     } else {
-                                        return res.send("User does not have any account Details");
+                                        const buf = new Buffer(JSON.stringify({ response: "User does not have any account Details" }), 'utf-8');
+                                        zlib.gzip(buf, function(_, result) {
+                                            return res.send(result);
+                                        });
                                     }
                                 }
                             });
@@ -413,7 +445,10 @@ app.post('/sellStock', function(req, res) {
                         if (err) throw err;
                         console.log("1 document updated");
                         //Add stock to profile
-                        res.send('new stock row created');
+                        const buf = new Buffer(JSON.stringify({ response: "new stock row created'" }), 'utf-8');
+                        zlib.gzip(buf, function(_, result) {
+                            return res.send(result);
+                        });
                     });
                 }
 
